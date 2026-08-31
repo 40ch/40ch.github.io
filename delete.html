@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>削除依頼 - 40ch</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #efefef;
+    font-family: "MS PGothic", "ＭＳ Ｐゴシック", "Meiryo", sans-serif;
+    font-size: 14px;
+    color: #000;
+  }
+
+  #banner {
+    background: #cc9900;
+    background: linear-gradient(#f5deb3, #d2a679);
+    border-bottom: 3px solid #800000;
+    padding: 8px 12px 6px;
+  }
+  #banner h1 {
+    margin: 0;
+    font-size: 28px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    color: #800000;
+    letter-spacing: 1px;
+  }
+  #banner .tagline {
+    font-size: 11px;
+    color: #5a3d1a;
+    margin-top: 2px;
+  }
+
+  #navbar {
+    background: #ffffcc;
+    border-bottom: 1px solid #999;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #006600;
+  }
+  #navbar a { color: #006600; }
+
+  #wrap {
+    max-width: 780px;
+    margin: 10px auto;
+    padding: 0 8px;
+  }
+
+  #pagetitle {
+    background: #ffe0e0;
+    border: 1px solid #cc6666;
+    padding: 6px 10px;
+    font-weight: bold;
+    color: #cc0000;
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+
+  #notice {
+    background: #fffbe0;
+    border: 1px solid #d4c37a;
+    padding: 10px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #444;
+  }
+
+  #deleteform {
+    background: #f0f0e0;
+    border: 1px solid #999;
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+  #deleteform table { border-collapse: collapse; width: 100%; }
+  #deleteform td { padding: 5px 6px; vertical-align: top; }
+  #deleteform .label {
+    width: 90px;
+    color: #333;
+    font-size: 12px;
+    text-align: right;
+    padding-top: 8px;
+  }
+  #deleteform input[type="text"],
+  #deleteform input[type="number"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    border: 1px inset #999;
+    padding: 4px;
+  }
+  #deleteform textarea {
+    width: 100%;
+    height: 90px;
+    font-family: "MS PGothic", "ＭＳ Ｐゴシック", sans-serif;
+    font-size: 14px;
+    border: 1px inset #999;
+    padding: 4px;
+    resize: vertical;
+  }
+  #deleteform .hint {
+    font-size: 11px;
+    color: #777;
+    margin-top: 2px;
+  }
+  #deleteform .submitrow { text-align: right; padding-top: 8px; }
+  #deleteform button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 3px 18px;
+    background: #e0e0e0;
+    border: 2px outset #ccc;
+    cursor: pointer;
+  }
+  #deleteform button:active { border-style: inset; }
+  #deleteform button:disabled { cursor: default; color: #999; }
+
+  #formerror {
+    color: #cc0000;
+    font-size: 12px;
+    margin-top: 6px;
+    display: none;
+  }
+  #formsuccess {
+    background: #e0ffe0;
+    border: 1px solid #669966;
+    color: #226622;
+    padding: 10px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+  }
+
+  #footer {
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    padding: 16px 0 30px;
+  }
+
+  a { color: #0000cc; }
+  a:visited { color: #660099; }
+</style>
+</head>
+<body>
+
+<div id="banner">
+  <h1>40ch</h1>
+  <div class="tagline">- 名無しの掲示板 -</div>
+</div>
+<div id="navbar"><a href="index.html">40ch トップ</a> &gt; 削除依頼</div>
+
+<div id="wrap">
+
+  <div id="pagetitle">コメント削除依頼フォーム</div>
+
+  <div id="notice">
+    このフォームから送信された内容は運営者が確認し、内容を見て削除の判断をします。<br>
+    フォームを送信しても、コメントはすぐには削除されません。あらかじめご了承ください。
+  </div>
+
+  <div id="formsuccess">依頼を受け付けました。運営者の確認をお待ちください。</div>
+
+  <div id="deleteform">
+    <table>
+      <tr>
+        <td class="label">コメントID</td>
+        <td>
+          <input type="number" id="commentid" placeholder="例：12">
+          <div class="hint">掲示板の各コメントにある「削除依頼」リンクから来た場合は自動で入力されています。番号がわからない場合は空欄でも構いません。</div>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">削除理由</td>
+        <td>
+          <textarea id="reason" maxlength="500" placeholder="削除してほしい理由を書いてください（誹謗中傷、個人情報の記載、誤爆など）"></textarea>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td class="submitrow">
+          <button id="submitbtn" type="button">依頼を送信する</button>
+        </td>
+      </tr>
+    </table>
+    <div id="formerror"></div>
+  </div>
+
+  <div id="footer"><a href="index.html">40ch トップに戻る</a></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  if (typeof window.supabase === "undefined") {
+    document.addEventListener("DOMContentLoaded", function () {
+      var el = document.getElementById("deleteform");
+      if (el) {
+        el.innerHTML = '<p style="color:#cc0000;">フォームの読み込みに失敗しました。ページを再読み込みしてください。</p>';
+      }
+    });
+    return;
+  }
+
+  var SUPABASE_URL = "https://yhjffbedalxnkdmwcsce.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_TJswlOFj93keIqi64ZUVbw_ND57S_j3";
+  var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var commentIdInput = document.getElementById("commentid");
+    var reasonInput = document.getElementById("reason");
+    var submitBtn = document.getElementById("submitbtn");
+    var formerror = document.getElementById("formerror");
+    var formsuccess = document.getElementById("formsuccess");
+    var deleteform = document.getElementById("deleteform");
+
+    // URLの ?id=xx を自動で入力欄にセット
+    var params = new URLSearchParams(window.location.search);
+    var idParam = params.get("id");
+    if (idParam && /^\d+$/.test(idParam)) {
+      commentIdInput.value = idParam;
+    }
+
+    async function submitRequest() {
+      formerror.style.display = "none";
+
+      var reason = reasonInput.value.trim();
+      if (!reason) {
+        formerror.textContent = "削除理由を入力してください。";
+        formerror.style.display = "block";
+        return;
+      }
+      if (reason.length > 500) {
+        formerror.textContent = "削除理由は500文字以内で入力してください。";
+        formerror.style.display = "block";
+        return;
+      }
+
+      var commentIdRaw = commentIdInput.value.trim();
+      var commentId = null;
+      if (commentIdRaw !== "") {
+        if (!/^\d+$/.test(commentIdRaw)) {
+          formerror.textContent = "コメントIDは数字で入力してください。";
+          formerror.style.display = "block";
+          return;
+        }
+        commentId = parseInt(commentIdRaw, 10);
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "送信中...";
+
+      var result = await client
+        .from("delete_requests")
+        .insert([{ comment_id: commentId, reason: reason }]);
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "依頼を送信する";
+
+      if (result.error) {
+        formerror.textContent = "送信に失敗しました。時間をおいて再度お試しください。";
+        formerror.style.display = "block";
+        console.error(result.error);
+        return;
+      }
+
+      deleteform.style.display = "none";
+      formsuccess.style.display = "block";
+    }
+
+    submitBtn.addEventListener("click", submitRequest);
+  });
+})();
+</script>
+
+</body>
+</html>

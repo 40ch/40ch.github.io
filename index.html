@@ -196,6 +196,30 @@
   #statusline.offline .dot {
     background: #aa3333;
   }
+
+  /* 広告枠 */
+  #adarea {
+    margin: 14px 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  #adarea .adlabel {
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 3px;
+  }
+
+  /* 削除申請リンク */
+  .comment-delete {
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .comment-delete a {
+    color: #999;
+  }
+  .comment-delete a:hover {
+    color: #cc0000;
+  }
 </style>
 </head>
 <body>
@@ -236,6 +260,11 @@
 
   <div id="comments">
     <div id="loading">読み込み中...</div>
+  </div>
+
+  <div id="adarea">
+    <div class="adlabel">広告</div>
+    <script src="https://adm.shinobi.jp/s/36217f6a1c07043f1b852e22f2fe3c0a"></script>
   </div>
 
   <div id="footer">40ch — シンプルな匿名掲示板</div>
@@ -307,6 +336,7 @@
           '<span class="comment-num">' + num + '</span>' +
           '<span class="comment-name">名無しさん</span>' +
           '<span class="comment-date">' + formatDate(c.created_at) + '</span>' +
+          '<span class="comment-delete"><a href="delete.html?id=' + c.id + '">削除依頼</a></span>' +
           '</div>' +
           '<div class="comment-body">' + escapeHtml(c.text) + '</div>' +
           '</div>';
@@ -416,6 +446,16 @@
             newEl.classList.add("new");
             newEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "comments" },
+        function (payload) {
+          var oldRow = payload.old;
+          if (!oldRow || oldRow.id === undefined) return;
+          allComments = allComments.filter(function (c) { return c.id !== oldRow.id; });
+          renderComments();
         }
       )
       .subscribe(function (status) {
