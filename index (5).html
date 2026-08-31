@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>40ch</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #efefef;
+    font-family: "MS PGothic", "ＭＳ Ｐゴシック", "Meiryo", sans-serif;
+    font-size: 14px;
+    color: #000;
+  }
+
+  /* ヘッダー */
+  #banner {
+    background: #cc9900;
+    background: linear-gradient(#f5deb3, #d2a679);
+    border-bottom: 3px solid #800000;
+    padding: 8px 12px 6px;
+  }
+  #banner h1 {
+    margin: 0;
+    font-size: 28px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    color: #800000;
+    letter-spacing: 1px;
+  }
+  #banner .tagline {
+    font-size: 11px;
+    color: #5a3d1a;
+    margin-top: 2px;
+  }
+
+  /* パンくず的なバー */
+  #navbar {
+    background: #ffffcc;
+    border-bottom: 1px solid #999;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #006600;
+  }
+
+  #wrap {
+    max-width: 780px;
+    margin: 10px auto;
+    padding: 0 8px;
+  }
+
+  /* スレタイ相当 */
+  #boardtitle {
+    background: #ffe0e0;
+    border: 1px solid #cc6666;
+    padding: 6px 10px;
+    font-weight: bold;
+    color: #cc0000;
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+  #boardtitle .count {
+    float: right;
+    font-weight: normal;
+    color: #333;
+    font-size: 12px;
+  }
+
+  /* 投稿フォーム */
+  #postform {
+    background: #f0f0e0;
+    border: 1px solid #999;
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+  #postform table { border-collapse: collapse; width: 100%; }
+  #postform td { padding: 4px 6px; vertical-align: top; }
+  #postform .label {
+    width: 70px;
+    color: #333;
+    font-size: 12px;
+    text-align: right;
+  }
+  #postform textarea {
+    width: 100%;
+    height: 70px;
+    font-family: "MS PGothic", "ＭＳ Ｐゴシック", sans-serif;
+    font-size: 14px;
+    border: 1px inset #999;
+    padding: 4px;
+    resize: vertical;
+  }
+  #postform .submitrow { text-align: right; padding-top: 6px; }
+  #postform button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 3px 18px;
+    background: #e0e0e0;
+    border: 2px outset #ccc;
+    cursor: pointer;
+  }
+  #postform button:active {
+    border-style: inset;
+  }
+  #postform button:disabled {
+    cursor: default;
+    color: #999;
+  }
+  #charcount {
+    font-size: 11px;
+    color: #666;
+    margin-right: 8px;
+  }
+  #posterror {
+    color: #cc0000;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  }
+
+  /* コメント一覧 */
+  #comments {
+    background: #fff;
+    border: 1px solid #999;
+  }
+  .comment {
+    border-bottom: 1px dotted #aaa;
+    padding: 8px 10px;
+  }
+  .comment:nth-child(odd) {
+    background: #f7f7f7;
+  }
+  .comment-head {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .comment-num {
+    color: #006600;
+    font-weight: bold;
+    margin-right: 6px;
+  }
+  .comment-name {
+    color: #008800;
+    font-weight: bold;
+    margin-right: 6px;
+  }
+  .comment-date {
+    color: #333;
+  }
+  .comment-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+  }
+  .comment.new {
+    animation: flash 1.6s ease-out;
+  }
+  @keyframes flash {
+    0% { background: #ffffb0; }
+    100% { background: transparent; }
+  }
+
+  #loading, #empty {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+  }
+
+  #footer {
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    padding: 16px 0 30px;
+  }
+
+  a { color: #0000cc; }
+  a:visited { color: #660099; }
+
+  #statusline {
+    font-size: 11px;
+    color: #666;
+    margin: 4px 2px 8px;
+  }
+  #statusline .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #33aa33;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  #statusline.offline .dot {
+    background: #aa3333;
+  }
+</style>
+</head>
+<body>
+
+<div id="banner">
+  <h1>40ch</h1>
+  <div class="tagline">- 名無しの掲示板 -</div>
+</div>
+<div id="navbar">40ch トップ &gt; 雑談</div>
+
+<div id="wrap">
+
+  <div id="boardtitle">
+    雑談スレッド（レス数：<span id="restotal">-</span>）
+    <span class="count"></span>
+  </div>
+
+  <div id="postform">
+    <table>
+      <tr>
+        <td class="label">本文</td>
+        <td>
+          <textarea id="bodyinput" maxlength="1000" placeholder="ここに書き込む"></textarea>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td class="submitrow">
+          <span id="charcount">0 / 1000</span>
+          <button id="submitbtn" type="button">書き込む</button>
+        </td>
+      </tr>
+    </table>
+    <div id="posterror"></div>
+  </div>
+
+  <div id="statusline"><span class="dot"></span>リアルタイム更新中</div>
+
+  <div id="comments">
+    <div id="loading">読み込み中...</div>
+  </div>
+
+  <div id="footer">40ch — シンプルな匿名掲示板</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // supabase-js のUMDビルドはグローバルに `supabase` を公開する。
+  // 読み込みに失敗している場合はここで検知してユーザーに知らせる。
+  if (typeof window.supabase === "undefined") {
+    document.addEventListener("DOMContentLoaded", function () {
+      var el = document.getElementById("comments");
+      if (el) {
+        el.innerHTML = '<div id="empty">掲示板の読み込みに失敗しました。ページを再読み込みしてください。</div>';
+      }
+    });
+    return;
+  }
+
+  // ==== Supabase 設定 ====
+  var SUPABASE_URL = "https://yhjffbedalxnkdmwcsce.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_TJswlOFj93keIqi64ZUVbw_ND57S_j3";
+  var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var allComments = [];
+  var cachedIp = null;
+
+  // DOM要素はDOMContentLoaded後にまとめて取得する
+  document.addEventListener("DOMContentLoaded", function () {
+    var commentsEl = document.getElementById("comments");
+    var bodyInput = document.getElementById("bodyinput");
+    var charcount = document.getElementById("charcount");
+    var submitBtn = document.getElementById("submitbtn");
+    var posterror = document.getElementById("posterror");
+    var restotal = document.getElementById("restotal");
+    var statusline = document.getElementById("statusline");
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      function pad(n) { return String(n).padStart(2, "0"); }
+      return d.getFullYear() + "/" + pad(d.getMonth() + 1) + "/" + pad(d.getDate()) + " " +
+        pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    }
+
+    function renderComments() {
+      if (allComments.length === 0) {
+        commentsEl.innerHTML = '<div id="empty">まだ書き込みがありません。最初の書き込みをしてみましょう。</div>';
+        restotal.textContent = "0";
+        return;
+      }
+      restotal.textContent = allComments.length;
+      commentsEl.innerHTML = allComments.map(function (c, i) {
+        var num = i + 1;
+        return '<div class="comment" data-id="' + c.id + '">' +
+          '<div class="comment-head">' +
+          '<span class="comment-num">' + num + '</span>' +
+          '<span class="comment-name">名無しさん</span>' +
+          '<span class="comment-date">' + formatDate(c.created_at) + '</span>' +
+          '</div>' +
+          '<div class="comment-body">' + escapeHtml(c.text) + '</div>' +
+          '</div>';
+      }).join("");
+    }
+
+    async function loadComments() {
+      var result = await client
+        .from("comments")
+        .select("id, created_at, text")
+        .order("created_at", { ascending: true });
+
+      if (result.error) {
+        commentsEl.innerHTML = '<div id="empty">読み込みに失敗しました。時間をおいて再度お試しください。</div>';
+        console.error(result.error);
+        return;
+      }
+      allComments = result.data;
+      renderComments();
+    }
+
+    async function getIp() {
+      if (cachedIp) return cachedIp;
+      try {
+        var res = await fetch("https://api.ipify.org?format=json");
+        var json = await res.json();
+        cachedIp = json.ip;
+        return cachedIp;
+      } catch (e) {
+        return "unknown";
+      }
+    }
+
+    async function postComment() {
+      var text = bodyInput.value.trim();
+      posterror.style.display = "none";
+
+      if (!text) {
+        posterror.textContent = "本文を入力してください。";
+        posterror.style.display = "block";
+        return;
+      }
+      if (text.length > 1000) {
+        posterror.textContent = "本文は1000文字以内で入力してください。";
+        posterror.style.display = "block";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "送信中...";
+
+      var ip = await getIp();
+
+      var result = await client
+        .from("comments")
+        .insert([{ text: text, ip_address: ip }]);
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "書き込む";
+
+      if (result.error) {
+        posterror.textContent = "書き込みに失敗しました。時間をおいて再度お試しください。";
+        posterror.style.display = "block";
+        console.error(result.error);
+        return;
+      }
+
+      bodyInput.value = "";
+      charcount.textContent = "0 / 1000";
+      // realtimeが有効なら自動で反映される。念のためフォールバックで再取得もしておく。
+      loadComments();
+    }
+
+    bodyInput.addEventListener("input", function () {
+      charcount.textContent = bodyInput.value.length + " / 1000";
+    });
+
+    // Ctrl+Enter（Macはcmd+Enter）で送信
+    bodyInput.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        postComment();
+      }
+    });
+
+    submitBtn.addEventListener("click", postComment);
+
+    // ==== 初期読み込み ====
+    loadComments();
+
+    // ==== Realtime購読 ====
+    client
+      .channel("comments-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "comments" },
+        function (payload) {
+          var row = payload.new;
+          if (allComments.some(function (c) { return c.id === row.id; })) return;
+          allComments.push({
+            id: row.id,
+            created_at: row.created_at,
+            text: row.text
+          });
+          renderComments();
+          var newEl = commentsEl.querySelector('[data-id="' + row.id + '"]');
+          if (newEl) {
+            newEl.classList.add("new");
+            newEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+      )
+      .subscribe(function (status) {
+        if (status === "SUBSCRIBED") {
+          statusline.classList.remove("offline");
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          statusline.classList.add("offline");
+        }
+      });
+  });
+})();
+</script>
+
+</body>
+</html>
