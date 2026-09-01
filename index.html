@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>40ch</title>
+<title>40ちゃんねる</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -24,7 +24,7 @@
   }
   #banner h1 {
     margin: 0;
-    font-size: 28px;
+    font-size: 26px;
     font-family: Georgia, "Times New Roman", serif;
     font-style: italic;
     color: #800000;
@@ -225,10 +225,10 @@
 <body>
 
 <div id="banner">
-  <h1>40ch</h1>
+  <h1>40ちゃんねる</h1>
   <div class="tagline">- 名無しの掲示板 -</div>
 </div>
-<div id="navbar">40ch トップ &gt; 雑談</div>
+<div id="navbar">40ちゃんねる トップ &gt; 雑談</div>
 
 <div id="wrap">
 
@@ -267,7 +267,7 @@
     <script src="https://adm.shinobi.jp/s/36217f6a1c07043f1b852e22f2fe3c0a"></script>
   </div>
 
-  <div id="footer">40ch — シンプルな匿名掲示板</div>
+  <div id="footer">40ちゃんねる — シンプルな匿名掲示板</div>
 
 </div>
 
@@ -329,8 +329,14 @@
         return;
       }
       restotal.textContent = allComments.length;
-      commentsEl.innerHTML = allComments.map(function (c, i) {
-        var num = i + 1;
+      // allComments は投稿順（古い→新しい）で保持し、表示のみ新しい順に反転する。
+      // レス番号は投稿順の通し番号のまま。
+      var withNum = allComments.map(function (c, i) {
+        return { c: c, num: i + 1 };
+      });
+      var displayList = withNum.slice().reverse();
+      commentsEl.innerHTML = displayList.map(function (item) {
+        var c = item.c, num = item.num;
         return '<div class="comment" data-id="' + c.id + '">' +
           '<div class="comment-head">' +
           '<span class="comment-num">' + num + '</span>' +
