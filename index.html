@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<link rel="icon" href="icon.jpg" type="image/jpeg">
-<link rel="apple-touch-icon" href="icon.jpg">
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="icon.jpg" type="image/jpeg">
+<link rel="apple-touch-icon" href="icon.jpg">
 <title>40ちゃんねる</title>
 <style>
   * { box-sizing: border-box; }
@@ -46,6 +45,13 @@
     padding: 3px 10px;
     font-size: 12px;
     color: #006600;
+    overflow: hidden;
+  }
+  #navbar .navlinks {
+    float: right;
+  }
+  #navbar .navlinks a {
+    margin-left: 10px;
   }
 
   #wrap {
@@ -223,6 +229,77 @@
   .comment-delete a:hover {
     color: #cc0000;
   }
+
+  /* 同意モーダル */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #modal-overlay.show {
+    display: flex;
+  }
+  #modal-box {
+    background: #f5f0e0;
+    border: 2px solid #800000;
+    max-width: 460px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+  }
+  #modal-box .modal-titlebar {
+    background: linear-gradient(#f5deb3, #d2a679);
+    border-bottom: 2px solid #800000;
+    padding: 6px 10px;
+    font-weight: bold;
+    color: #800000;
+    font-size: 14px;
+  }
+  #modal-box .modal-body {
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #222;
+  }
+  #modal-box .modal-body p {
+    margin: 0 0 10px;
+  }
+  #modal-box .modal-body ul {
+    margin: 0 0 10px;
+    padding-left: 20px;
+  }
+  #modal-box .modal-body strong {
+    color: #cc0000;
+  }
+  #modal-box .modal-buttons {
+    padding: 10px 16px 14px;
+    text-align: right;
+    border-top: 1px dotted #bbb;
+  }
+  #modal-box .modal-buttons button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 20px;
+    background: #e0e0e0;
+    border: 2px outset #ccc;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  #modal-box .modal-buttons button:active {
+    border-style: inset;
+  }
+  #modal-box .modal-buttons .agree-btn {
+    background: #cc0000;
+    color: #fff;
+    border-color: #e08080;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
@@ -231,7 +308,7 @@
   <h1>40ちゃんねる</h1>
   <div class="tagline">- 名無しの掲示板 -</div>
 </div>
-<div id="navbar">40ちゃんねる トップ &gt; 雑談</div>
+<div id="navbar">40ちゃんねる トップ &gt; 雑談<span class="navlinks"><a href="termsofservice.html">利用規約</a></span></div>
 
 <div id="wrap">
 
@@ -274,6 +351,24 @@
 
 </div>
 
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div class="modal-titlebar">書き込み前の確認</div>
+    <div class="modal-body">
+      <p>書き込みを行う前に、以下の内容をご確認ください。</p>
+      <ul>
+        <li>投稿する内容は<a href="termsofservice.html" target="_blank" rel="noopener">利用規約</a>に同意したものとみなされます。</li>
+        <li><strong>投稿時のIPアドレスはサーバーに記録されます。</strong>法令に基づく開示請求があった場合、警察などの公的機関にIPアドレスを含む情報を開示する可能性があります。</li>
+      </ul>
+      <p>内容に同意した上で、書き込みを続けますか？</p>
+    </div>
+    <div class="modal-buttons">
+      <button id="modal-cancel" type="button">キャンセル</button>
+      <button id="modal-agree" class="agree-btn" type="button">同意して書き込む</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function () {
@@ -308,6 +403,9 @@
     var posterror = document.getElementById("posterror");
     var restotal = document.getElementById("restotal");
     var statusline = document.getElementById("statusline");
+    var modalOverlay = document.getElementById("modal-overlay");
+    var modalAgree = document.getElementById("modal-agree");
+    var modalCancel = document.getElementById("modal-cancel");
 
     function escapeHtml(str) {
       return str
@@ -423,14 +521,51 @@
       charcount.textContent = bodyInput.value.length + " / 1000";
     });
 
-    // Ctrl+Enter（Macはcmd+Enter）で送信
+    // Ctrl+Enter（Macはcmd+Enter）で送信（バリデーション後、確認モーダルを開く）
     bodyInput.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        postComment();
+        openConfirmModal();
       }
     });
 
-    submitBtn.addEventListener("click", postComment);
+    submitBtn.addEventListener("click", openConfirmModal);
+
+    function openConfirmModal() {
+      var text = bodyInput.value.trim();
+      posterror.style.display = "none";
+
+      if (!text) {
+        posterror.textContent = "本文を入力してください。";
+        posterror.style.display = "block";
+        return;
+      }
+      if (text.length > 1000) {
+        posterror.textContent = "本文は1000文字以内で入力してください。";
+        posterror.style.display = "block";
+        return;
+      }
+
+      modalOverlay.classList.add("show");
+    }
+
+    function closeConfirmModal() {
+      modalOverlay.classList.remove("show");
+    }
+
+    modalCancel.addEventListener("click", closeConfirmModal);
+    modalOverlay.addEventListener("click", function (e) {
+      if (e.target === modalOverlay) closeConfirmModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modalOverlay.classList.contains("show")) {
+        closeConfirmModal();
+      }
+    });
+
+    modalAgree.addEventListener("click", function () {
+      closeConfirmModal();
+      postComment();
+    });
 
     // ==== 初期読み込み ====
     loadComments();

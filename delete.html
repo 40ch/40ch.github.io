@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<link rel="icon" href="icon.jpg" type="image/jpeg">
-<link rel="apple-touch-icon" href="icon.jpg">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="icon.jpg" type="image/jpeg">
+<link rel="apple-touch-icon" href="icon.jpg">
 <title>削除依頼 - 40ちゃんねる</title>
 <style>
   * { box-sizing: border-box; }
@@ -43,8 +43,15 @@
     padding: 3px 10px;
     font-size: 12px;
     color: #006600;
+    overflow: hidden;
   }
   #navbar a { color: #006600; }
+  #navbar .navlinks {
+    float: right;
+  }
+  #navbar .navlinks a {
+    margin-left: 10px;
+  }
 
   #wrap {
     max-width: 780px;
@@ -154,7 +161,7 @@
   <h1>40ちゃんねる</h1>
   <div class="tagline">- 名無しの掲示板 -</div>
 </div>
-<div id="navbar"><a href="index.html">40ちゃんねる トップ</a> &gt; 削除依頼</div>
+<div id="navbar"><a href="index.html">40ちゃんねる トップ</a> &gt; 削除依頼<span class="navlinks"><a href="termsofservice.html">利用規約</a></span></div>
 
 <div id="wrap">
 
