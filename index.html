@@ -129,6 +129,47 @@
     display: none;
   }
 
+  /* 画像アップロード */
+  #imageinput-row .hint {
+    font-size: 11px;
+    color: #777;
+    margin-top: 3px;
+  }
+  #imagepreview-wrap {
+    margin-top: 6px;
+    display: none;
+  }
+  #imagepreview-wrap.show {
+    display: block;
+  }
+  #imagepreview {
+    max-width: 160px;
+    max-height: 160px;
+    border: 1px solid #999;
+    display: block;
+  }
+  #imageremove {
+    font-size: 11px;
+    color: #cc0000;
+    margin-top: 3px;
+    cursor: pointer;
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    font-family: inherit;
+  }
+  #uploadstatus {
+    font-size: 11px;
+    color: #666;
+    margin-top: 3px;
+    display: none;
+  }
+  #uploadstatus.show {
+    display: block;
+  }
+
   /* コメント一覧 */
   #comments {
     background: #fff;
@@ -162,6 +203,20 @@
     white-space: pre-wrap;
     word-break: break-word;
     line-height: 1.6;
+  }
+  .comment-image {
+    margin-top: 6px;
+  }
+  .comment-image img {
+    max-width: 100%;
+    max-height: 400px;
+    border: 1px solid #999;
+    cursor: pointer;
+    display: block;
+  }
+  .comment-id {
+    color: #888;
+    margin-right: 6px;
   }
   .comment.new {
     animation: flash 1.6s ease-out;
@@ -300,6 +355,92 @@
     border-color: #e08080;
     font-weight: bold;
   }
+
+  /* 年齢確認モーダル：ページ読み込み直後から表示（FOUC防止のためデフォルト表示） */
+  #age-overlay {
+    display: flex;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #age-overlay.hide {
+    display: none;
+  }
+  #age-box {
+    background: #f5f0e0;
+    border: 2px solid #800000;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+  }
+  #age-box .modal-titlebar {
+    background: linear-gradient(#f5deb3, #d2a679);
+    border-bottom: 2px solid #800000;
+    padding: 6px 10px;
+    font-weight: bold;
+    color: #800000;
+    font-size: 14px;
+  }
+  #age-box .modal-body {
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #222;
+    text-align: center;
+  }
+  #age-box .modal-buttons {
+    padding: 10px 16px 16px;
+    text-align: center;
+    border-top: 1px dotted #bbb;
+  }
+  #age-box .modal-buttons button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 24px;
+    background: #e0e0e0;
+    border: 2px outset #ccc;
+    cursor: pointer;
+    margin: 0 6px;
+  }
+  #age-box .modal-buttons button:active {
+    border-style: inset;
+  }
+  #age-box .modal-buttons .yes-btn {
+    background: #cc0000;
+    color: #fff;
+    border-color: #e08080;
+    font-weight: bold;
+  }
+  #age-blocked {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #efefef;
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+  #age-blocked.show {
+    display: flex;
+  }
+  #age-blocked .box {
+    max-width: 420px;
+  }
+  #age-blocked h2 {
+    color: #800000;
+    font-size: 18px;
+  }
+  #age-blocked p {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.8;
+  }
 </style>
 </head>
 <body>
@@ -323,6 +464,18 @@
         <td class="label">本文</td>
         <td>
           <textarea id="bodyinput" maxlength="1000" placeholder="ここに書き込む"></textarea>
+        </td>
+      </tr>
+      <tr id="imageinput-row">
+        <td class="label">画像</td>
+        <td>
+          <input type="file" id="imageinput" accept="image/*">
+          <div class="hint">任意。JPEG/PNG/GIFなど（最大32MB）</div>
+          <div id="imagepreview-wrap">
+            <img id="imagepreview" alt="プレビュー">
+            <button id="imageremove" type="button">画像を削除</button>
+          </div>
+          <div id="uploadstatus">アップロード中...</div>
         </td>
       </tr>
       <tr>
@@ -369,6 +522,51 @@
   </div>
 </div>
 
+<div id="age-overlay">
+  <div id="age-box">
+    <div class="modal-titlebar">年齢確認</div>
+    <div class="modal-body">
+      あなたは18歳以上ですか？
+    </div>
+    <div class="modal-buttons">
+      <button id="age-no" type="button">いいえ</button>
+      <button id="age-yes" class="yes-btn" type="button">はい</button>
+    </div>
+  </div>
+</div>
+
+<div id="age-blocked">
+  <div class="box">
+    <h2>閲覧できません</h2>
+    <p>このサイトは18歳以上の方のみご利用いただけます。</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // ==== 年齢確認 ====
+  // ページを開くたびに毎回表示する（記憶しない）。
+  // 「いいえ」を選んだ場合はコンテンツを隠してブロック画面のみ表示する。
+  document.addEventListener("DOMContentLoaded", function () {
+    var ageOverlay = document.getElementById("age-overlay");
+    var ageYes = document.getElementById("age-yes");
+    var ageNo = document.getElementById("age-no");
+    var ageBlocked = document.getElementById("age-blocked");
+
+    ageYes.addEventListener("click", function () {
+      ageOverlay.classList.add("hide");
+    });
+
+    ageNo.addEventListener("click", function () {
+      ageOverlay.classList.add("hide");
+      ageBlocked.classList.add("show");
+      document.body.style.overflow = "hidden";
+    });
+  });
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function () {
@@ -389,10 +587,15 @@
   // ==== Supabase 設定 ====
   var SUPABASE_URL = "https://yhjffbedalxnkdmwcsce.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_TJswlOFj93keIqi64ZUVbw_ND57S_j3";
+  var IMGBB_API_KEY = "afad52384f4e40a59cc8aea5be68e063";
   var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   var allComments = [];
   var cachedIp = null;
+  // このページを開いてから一度でも投稿確認モーダルに同意したか（ページ内メモリのみ。再読み込みでリセット）
+  var hasAgreedThisPageLoad = false;
+  // 選択された画像ファイル（アップロード前のFileオブジェクト）
+  var selectedImageFile = null;
 
   // DOM要素はDOMContentLoaded後にまとめて取得する
   document.addEventListener("DOMContentLoaded", function () {
@@ -406,6 +609,11 @@
     var modalOverlay = document.getElementById("modal-overlay");
     var modalAgree = document.getElementById("modal-agree");
     var modalCancel = document.getElementById("modal-cancel");
+    var imageInput = document.getElementById("imageinput");
+    var imagePreviewWrap = document.getElementById("imagepreview-wrap");
+    var imagePreview = document.getElementById("imagepreview");
+    var imageRemove = document.getElementById("imageremove");
+    var uploadStatus = document.getElementById("uploadstatus");
 
     function escapeHtml(str) {
       return str
@@ -414,6 +622,62 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // ==== 画像選択・プレビュー ====
+    imageInput.addEventListener("change", function () {
+      var file = imageInput.files && imageInput.files[0];
+      if (!file) {
+        selectedImageFile = null;
+        imagePreviewWrap.classList.remove("show");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        posterror.textContent = "画像ファイルを選択してください。";
+        posterror.style.display = "block";
+        imageInput.value = "";
+        selectedImageFile = null;
+        imagePreviewWrap.classList.remove("show");
+        return;
+      }
+      if (file.size > 32 * 1024 * 1024) {
+        posterror.textContent = "画像サイズは32MB以内にしてください。";
+        posterror.style.display = "block";
+        imageInput.value = "";
+        selectedImageFile = null;
+        imagePreviewWrap.classList.remove("show");
+        return;
+      }
+      posterror.style.display = "none";
+      selectedImageFile = file;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        imagePreview.src = e.target.result;
+        imagePreviewWrap.classList.add("show");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    imageRemove.addEventListener("click", function () {
+      selectedImageFile = null;
+      imageInput.value = "";
+      imagePreviewWrap.classList.remove("show");
+      imagePreview.src = "";
+    });
+
+    // ImgBBに画像をアップロードし、表示用URLを返す
+    async function uploadImageToImgbb(file) {
+      var formData = new FormData();
+      formData.append("image", file);
+      var res = await fetch("https://api.imgbb.com/1/upload?key=" + IMGBB_API_KEY, {
+        method: "POST",
+        body: formData
+      });
+      var json = await res.json();
+      if (!json.success) {
+        throw new Error("ImgBB upload failed");
+      }
+      return json.data.url;
     }
 
     function formatDate(iso) {
@@ -438,14 +702,19 @@
       var displayList = withNum.slice().reverse();
       commentsEl.innerHTML = displayList.map(function (item) {
         var c = item.c, num = item.num;
+        var imageHtml = c.image_url
+          ? '<div class="comment-image"><a href="' + escapeHtml(c.image_url) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(c.image_url) + '" alt="添付画像" loading="lazy"></a></div>'
+          : '';
         return '<div class="comment" data-id="' + c.id + '">' +
           '<div class="comment-head">' +
           '<span class="comment-num">' + num + '</span>' +
           '<span class="comment-name">名無しさん</span>' +
           '<span class="comment-date">' + formatDate(c.created_at) + '</span>' +
+          '<span class="comment-id">ID:' + c.id + '</span>' +
           '<span class="comment-delete"><a href="delete.html?id=' + c.id + '">削除依頼</a></span>' +
           '</div>' +
           '<div class="comment-body">' + escapeHtml(c.text) + '</div>' +
+          imageHtml +
           '</div>';
       }).join("");
     }
@@ -453,7 +722,7 @@
     async function loadComments() {
       var result = await client
         .from("comments")
-        .select("id, created_at, text")
+        .select("id, created_at, text, image_url")
         .order("created_at", { ascending: true });
 
       if (result.error) {
@@ -495,11 +764,31 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "送信中...";
 
+      var imageUrl = null;
+      if (selectedImageFile) {
+        uploadStatus.classList.add("show");
+        try {
+          imageUrl = await uploadImageToImgbb(selectedImageFile);
+        } catch (e) {
+          console.error(e);
+          uploadStatus.classList.remove("show");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "書き込む";
+          posterror.textContent = "画像のアップロードに失敗しました。時間をおいて再度お試しください。";
+          posterror.style.display = "block";
+          return;
+        }
+        uploadStatus.classList.remove("show");
+      }
+
       var ip = await getIp();
+
+      var row = { text: text, ip_address: ip };
+      if (imageUrl) row.image_url = imageUrl;
 
       var result = await client
         .from("comments")
-        .insert([{ text: text, ip_address: ip }]);
+        .insert([row]);
 
       submitBtn.disabled = false;
       submitBtn.textContent = "書き込む";
@@ -513,6 +802,10 @@
 
       bodyInput.value = "";
       charcount.textContent = "0 / 1000";
+      selectedImageFile = null;
+      imageInput.value = "";
+      imagePreviewWrap.classList.remove("show");
+      imagePreview.src = "";
       // realtimeが有効なら自動で反映される。念のためフォールバックで再取得もしておく。
       loadComments();
     }
@@ -545,6 +838,12 @@
         return;
       }
 
+      // このページを開いてから既に一度同意済みなら、モーダルを出さず直接投稿する。
+      if (hasAgreedThisPageLoad) {
+        postComment();
+        return;
+      }
+
       modalOverlay.classList.add("show");
     }
 
@@ -563,6 +862,7 @@
     });
 
     modalAgree.addEventListener("click", function () {
+      hasAgreedThisPageLoad = true;
       closeConfirmModal();
       postComment();
     });
@@ -582,7 +882,8 @@
           allComments.push({
             id: row.id,
             created_at: row.created_at,
-            text: row.text
+            text: row.text,
+            image_url: row.image_url
           });
           renderComments();
           var newEl = commentsEl.querySelector('[data-id="' + row.id + '"]');
