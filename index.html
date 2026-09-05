@@ -218,6 +218,36 @@
     color: #888;
     margin-right: 6px;
   }
+  .comment-body a.external-link {
+    color: #0000cc;
+    word-break: break-all;
+  }
+  .comment-body a.external-link:visited {
+    color: #660099;
+  }
+  .reply-badge {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .reply-badge a {
+    color: #cc6600;
+    text-decoration: none;
+    border-bottom: 1px dotted #cc6600;
+  }
+  .reply-badge a:hover {
+    color: #cc0000;
+  }
+  .reply-badge .reply-missing {
+    color: #999;
+    font-style: italic;
+  }
+  .comment.highlight-target {
+    animation: highlightflash 1.8s ease-out;
+  }
+  @keyframes highlightflash {
+    0% { background: #ffe0a0; }
+    100% { background: transparent; }
+  }
   .comment.new {
     animation: flash 1.6s ease-out;
   }
@@ -353,6 +383,75 @@
     background: #cc0000;
     color: #fff;
     border-color: #e08080;
+    font-weight: bold;
+  }
+
+  /* 外部リンク離脱確認モーダル */
+  #leave-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1500;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #leave-overlay.show {
+    display: flex;
+  }
+  #leave-box {
+    background: #f5f0e0;
+    border: 2px solid #800000;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+  }
+  #leave-box .modal-titlebar {
+    background: linear-gradient(#f5deb3, #d2a679);
+    border-bottom: 2px solid #800000;
+    padding: 6px 10px;
+    font-weight: bold;
+    color: #800000;
+    font-size: 14px;
+  }
+  #leave-box .modal-body {
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #222;
+  }
+  #leave-box .modal-body .leave-url {
+    display: block;
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: #fff;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    color: #333;
+    word-break: break-all;
+  }
+  #leave-box .modal-buttons {
+    padding: 10px 16px 14px;
+    text-align: right;
+    border-top: 1px dotted #bbb;
+  }
+  #leave-box .modal-buttons button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 20px;
+    background: #e0e0e0;
+    border: 2px outset #ccc;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  #leave-box .modal-buttons button:active {
+    border-style: inset;
+  }
+  #leave-box .modal-buttons .go-btn {
+    background: #cc6600;
+    color: #fff;
+    border-color: #e0a060;
     font-weight: bold;
   }
 
@@ -522,6 +621,20 @@
   </div>
 </div>
 
+<div id="leave-overlay">
+  <div id="leave-box">
+    <div class="modal-titlebar">外部サイトへ移動します</div>
+    <div class="modal-body">
+      このサイトを離れますか？リンク先の安全性については保障しません。
+      <span class="leave-url" id="leave-url-display"></span>
+    </div>
+    <div class="modal-buttons">
+      <button id="leave-cancel" type="button">キャンセル</button>
+      <button id="leave-go" class="go-btn" type="button">移動する</button>
+    </div>
+  </div>
+</div>
+
 <div id="age-overlay">
   <div id="age-box">
     <div class="modal-titlebar">年齢確認</div>
@@ -614,6 +727,11 @@
     var imagePreview = document.getElementById("imagepreview");
     var imageRemove = document.getElementById("imageremove");
     var uploadStatus = document.getElementById("uploadstatus");
+    var leaveOverlay = document.getElementById("leave-overlay");
+    var leaveUrlDisplay = document.getElementById("leave-url-display");
+    var leaveCancel = document.getElementById("leave-cancel");
+    var leaveGo = document.getElementById("leave-go");
+    var pendingLeaveUrl = null;
 
     function escapeHtml(str) {
       return str
@@ -622,6 +740,39 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // 本文をエスケープした上で、httpsから始まるURLだけをリンク化する。
+    // httpのみのURLは意図的にリンク化しない（要件どおり）。
+    function linkifyAndEscape(text) {
+      var escaped = escapeHtml(text);
+      // エスケープ後の文字列に対して、https URLを検出してリンクに変換する。
+      // 末尾に付きがちな句読点・括弧はリンクに含めない。
+      return escaped.replace(/(https:\/\/[^\s<>"]+)/g, function (match) {
+        var trailing = "";
+        var url = match;
+        var trailingChars = /[.,!?、。」』)\]]+$/;
+        var m = url.match(trailingChars);
+        if (m) {
+          trailing = m[0];
+          url = url.slice(0, url.length - trailing.length);
+        }
+        if (!url) return match;
+        return '<a href="#" class="external-link" data-url="' + url + '">' + url + '</a>' + trailing;
+      });
+    }
+
+    // 本文中に #数字 の形式があれば、それを返信先アンカーとして扱う。
+    // 例: "#7 それはいいですね" → 7番のコメントへのリンク付きバッジを先頭に表示する。
+    function renderReplyBadge(text) {
+      var m = text.match(/#(\d+)/);
+      if (!m) return '';
+      var targetId = m[1];
+      var exists = allComments.some(function (c) { return String(c.id) === targetId; });
+      if (exists) {
+        return '<div class="reply-badge">&gt;&gt; <a href="#comment-' + targetId + '" class="reply-link" data-target="' + targetId + '">' + targetId + '</a> への返信</div>';
+      }
+      return '<div class="reply-badge"><span class="reply-missing">&gt;&gt; ' + escapeHtml(targetId) + '（該当コメントが見つかりません）</span></div>';
     }
 
     // ==== 画像選択・プレビュー ====
@@ -695,25 +846,21 @@
       }
       restotal.textContent = allComments.length;
       // allComments は投稿順（古い→新しい）で保持し、表示のみ新しい順に反転する。
-      // レス番号は投稿順の通し番号のまま。
-      var withNum = allComments.map(function (c, i) {
-        return { c: c, num: i + 1 };
-      });
-      var displayList = withNum.slice().reverse();
-      commentsEl.innerHTML = displayList.map(function (item) {
-        var c = item.c, num = item.num;
+      var displayList = allComments.slice().reverse();
+      commentsEl.innerHTML = displayList.map(function (c) {
         var imageHtml = c.image_url
           ? '<div class="comment-image"><a href="' + escapeHtml(c.image_url) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(c.image_url) + '" alt="添付画像" loading="lazy"></a></div>'
           : '';
-        return '<div class="comment" data-id="' + c.id + '">' +
+        var replyHtml = renderReplyBadge(c.text);
+        return '<div class="comment" id="comment-' + c.id + '" data-id="' + c.id + '">' +
           '<div class="comment-head">' +
-          '<span class="comment-num">' + num + '</span>' +
+          '<span class="comment-num">' + c.id + '</span>' +
           '<span class="comment-name">名無しさん</span>' +
           '<span class="comment-date">' + formatDate(c.created_at) + '</span>' +
-          '<span class="comment-id">ID:' + c.id + '</span>' +
           '<span class="comment-delete"><a href="delete.html?id=' + c.id + '">削除依頼</a></span>' +
           '</div>' +
-          '<div class="comment-body">' + escapeHtml(c.text) + '</div>' +
+          replyHtml +
+          '<div class="comment-body">' + linkifyAndEscape(c.text) + '</div>' +
           imageHtml +
           '</div>';
       }).join("");
@@ -859,12 +1006,56 @@
       if (e.key === "Escape" && modalOverlay.classList.contains("show")) {
         closeConfirmModal();
       }
+      if (e.key === "Escape" && leaveOverlay.classList.contains("show")) {
+        closeLeaveModal();
+      }
     });
 
     modalAgree.addEventListener("click", function () {
       hasAgreedThisPageLoad = true;
       closeConfirmModal();
       postComment();
+    });
+
+    // ==== コメント内リンク・返信リンクのクリック処理（イベント委任） ====
+    commentsEl.addEventListener("click", function (e) {
+      var link = e.target.closest ? e.target.closest("a.external-link") : null;
+      if (link) {
+        e.preventDefault();
+        pendingLeaveUrl = link.getAttribute("data-url");
+        leaveUrlDisplay.textContent = pendingLeaveUrl;
+        leaveOverlay.classList.add("show");
+        return;
+      }
+      var replyLink = e.target.closest ? e.target.closest("a.reply-link") : null;
+      if (replyLink) {
+        e.preventDefault();
+        var targetId = replyLink.getAttribute("data-target");
+        var targetEl = document.getElementById("comment-" + targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          targetEl.classList.add("highlight-target");
+          setTimeout(function () {
+            targetEl.classList.remove("highlight-target");
+          }, 1800);
+        }
+      }
+    });
+
+    function closeLeaveModal() {
+      leaveOverlay.classList.remove("show");
+      pendingLeaveUrl = null;
+    }
+
+    leaveCancel.addEventListener("click", closeLeaveModal);
+    leaveOverlay.addEventListener("click", function (e) {
+      if (e.target === leaveOverlay) closeLeaveModal();
+    });
+    leaveGo.addEventListener("click", function () {
+      if (pendingLeaveUrl) {
+        window.open(pendingLeaveUrl, "_blank", "noopener");
+      }
+      closeLeaveModal();
     });
 
     // ==== 初期読み込み ====
