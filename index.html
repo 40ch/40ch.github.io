@@ -6,6 +6,9 @@
 <link rel="icon" href="icon.jpg" type="image/jpeg">
 <link rel="apple-touch-icon" href="icon.jpg">
 <title>40ちゃんねる</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -23,6 +26,14 @@
     background: linear-gradient(#f5deb3, #d2a679);
     border-bottom: 3px solid #800000;
     padding: 8px 12px 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #banner .brand-block {
+    min-width: 0;
   }
   #banner h1 {
     margin: 0;
@@ -36,6 +47,38 @@
     font-size: 11px;
     color: #5a3d1a;
     margin-top: 2px;
+  }
+  #banner .seatubes-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #03070c;
+    color: #d7f3ee;
+    border: 1px solid rgba(89,230,199,0.5);
+    border-radius: 999px;
+    padding: 6px 14px 6px 10px;
+    font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+  #banner .seatubes-btn .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #59e6c7;
+    box-shadow: 0 0 4px #59e6c7;
+    flex-shrink: 0;
+  }
+  #banner .seatubes-btn:hover {
+    background: #0a141f;
+    border-color: #59e6c7;
+  }
+  #banner .seatubes-btn:active {
+    transform: scale(0.97);
   }
 
   /* パンくず的なバー */
@@ -545,8 +588,11 @@
 <body>
 
 <div id="banner">
-  <h1>40ちゃんねる</h1>
-  <div class="tagline">- 名無しの掲示板 -</div>
+  <div class="brand-block">
+    <h1>40ちゃんねる</h1>
+    <div class="tagline">- 名無しの掲示板 -</div>
+  </div>
+  <a href="https://seatubes.40channel.com" class="seatubes-btn"><span class="dot"></span>SeaTubesへ移動</a>
 </div>
 <div id="navbar">40ちゃんねる トップ &gt; 雑談<span class="navlinks"><a href="termsofservice.html">利用規約</a></span></div>
 
